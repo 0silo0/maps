@@ -36,7 +36,11 @@ const MapScreen: React.FC = () => {
   const handleDeleteMarker = (markerId: string) => {
     const updatedMarkers = markers.filter((marker) => marker.id !== markerId);
     setMarkers(updatedMarkers);
-    navigation.goBack();
+    if (updatedMarkers.length === 0) {
+      navigation.navigate('MapScreen');
+    } else {
+      navigation.goBack();
+    }
   };
 
   const moveToCoordinates = () => {
