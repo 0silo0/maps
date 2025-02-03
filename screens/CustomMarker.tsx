@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Используем иконку из библиотеки expo-vector-icons
+import { Ionicons } from '@expo/vector-icons'; // Взял иконку из expo-vector-icons
 
 interface Props {
   photoCount: number;
