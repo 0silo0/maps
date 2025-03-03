@@ -1,53 +1,55 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, Button } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import CustomMarker from './CustomMarker';
+import { MarkerType } from '../types';
+import { v4 as uuid } from 'uuid';
+import { useMarkers } from '../components/MarkersContext';
 
-interface MarkerType {
-  id: string;
-  coordinate: {
-    latitude: number;
-    longitude: number;
-  };
-  images: string[];
-}
+const generateId = () => {
+  return Math.random().toString(36).substring(2, 15);
+};
+
 
 const MapScreen: React.FC = () => {
-  const navigation = useNavigation();
-  const [markers, setMarkers] = useState<MarkerType[]>([]);
+  const router = useRouter();
+  const { markers, setMarkers } = useMarkers();
   const [inputLatitude, setInputLatitude] = useState('');
   const [inputLongitude, setInputLongitude] = useState('');
   const mapRef = useRef<MapView>(null);
 
   const handleMapPress = (event: any) => {
     const newMarker: MarkerType = {
-      id: Date.now().toString(),
+      id: generateId(),
       coordinate: event.nativeEvent.coordinate,
       images: [],
     };
+    console.log('Новый маркер создан:', newMarker);
     setMarkers([...markers, newMarker]);
   };
 
   const handleMarkerPress = (marker: MarkerType) => {
-    navigation.navigate('MarkerDetailScreen', { marker, markers, setMarkers });
+    console.log('Нажат маркер:', marker);
+    router.push(`/marker/${marker.id}`);
+    return true;
   };
 
-  const handleDeleteMarker = (markerId: string) => {
-    const updatedMarkers = markers.filter((marker) => marker.id !== markerId);
-    setMarkers(updatedMarkers);
-    if (updatedMarkers.length === 0) {
-      navigation.navigate('MapScreen');
-    } else {
-      navigation.goBack();
-    }
-  };
+  // const handleDeleteMarker = (markerId: string) => {
+  //   const updatedMarkers = markers.filter((marker) => marker.id !== markerId);
+  //   setMarkers(updatedMarkers);
+  //   if (updatedMarkers.length === 0) {
+  //     navigation.navigate('MapScreen');
+  //   } else {
+  //     navigation.goBack();
+  //   }
+  // };
 
   const moveToCoordinates = () => {
     const lat = parseFloat(inputLatitude);
     const lng = parseFloat(inputLongitude);
 
-    if (!isNaN(lat) && !isNaN(lng)) {
+    if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
       if (mapRef.current) {
         mapRef.current.animateToRegion(
           {

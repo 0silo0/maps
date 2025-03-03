@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "carefree-red-edamame",
-    "slug": "snack-78033996-8fb2-46b5-bc4e-09f2368bc237",
+    "name": "Maps",
+    "slug": "Maps",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,6 +23,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
