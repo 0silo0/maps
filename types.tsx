@@ -1,20 +1,21 @@
+// export interface MarkerType {
+//   id: string;
+//   coordinate: {
+//     latitude: number;
+//     longitude: number;
+//   };
+//   images: string[];
+// }
+
 export interface MarkerType {
-  id: string;
-  coordinate: {
-    latitude: number;
-    longitude: number;
-  };
-  images: string[];
+  id: number;
+  latitude: number;
+  longitude: number;
+  images?: ImageType[];
 }
 
-// export type RootStackParamList = {
-//   MapScreen: undefined;
-//   MarkerDetailScreen: {
-//     marker: MarkerType;
-//     markers: MarkerType[];
-//     setMarkers: (markers: MarkerType[]) => void;
-//   };
-// };
-
-// export type MarkerDetailScreenRouteProp = RouteProp<RootStackParamList, 'MarkerDetailScreen'>;
-// export type NavigationProp = StackNavigationProp<RootStackParamList, 'MarkerDetailScreen'>;
+export type ImageType = {
+  id: number;
+  uri: string;
+  markerId: number;
+};

@@ -2,41 +2,55 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, Button, Alert, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { MarkerType } from '../types';
-import { useMarkers } from '../components/MarkersContext';
+import { MarkerType, ImageType } from '../types';
+// import { useMarkers } from '../components/MarkersContext';
+import { useDatabase } from '../contexts/DatabaseContext';
 
+interface MarkerDetailScreenProps {
+  fetchedMarker: MarkerType;
+}
 
-const MarkerDetailScreen: React.FC = () => {
+const MarkerDetailScreen: React.FC<MarkerDetailScreenProps> = ({ fetchedMarker }) => {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
-  const markerId = Array.isArray(id) ? id[0] : id;
-  const { markers, setMarkers } = useMarkers();
-  const [marker, setMarker] = useState<MarkerType | null>(null); // Локальное состояние для текущего маркера
-  const [images, setImages] = useState<string[]>([]);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  // const { markers, setMarkers } = useMarkers();
+  const { addImage, deleteMarker, getMarkerImages, deleteImage } = useDatabase();
+  const [images, setImages] = useState<ImageType[]>([]);
+  const [selectedImage, setSelectedImage] = useState<number | null>(null);
+
+  // useEffect(() => {
+  //   // Обновляем локальное состояние изображений при изменении fetchedMarker
+  //   setImages(fetchedMarker.images || []);
+  // }, [fetchedMarker]);
 
   useEffect(() => {
-    console.log('Загрузка маркера с id:', markerId);
-    const fetchedMarker = markers.find((m) => m.id === markerId);
-    if (fetchedMarker) {
-      console.log('Маркер найден:', fetchedMarker);
-      setMarker(fetchedMarker);
-      setImages(fetchedMarker.images);
-    } else {
-      console.warn('Маркер не найден');
-    }
-  }, [markerId, markers]);
-
-  // Если маркер не найден, показываем сообщение
-  if (!marker) {
-    return (
-      <View style={styles.container}>
-        <Text>Маркер не найден</Text>
-      </View>
-    );
-  }
+    const loadImages = async () => {
+      const data = await getMarkerImages(fetchedMarker.id); // Получаем изображения из базы данных
+      setImages(data.map((img) => ({ id: img.id, uri: img.uri, markerId: img.markerId })));
+    };
+    loadImages();
+  }, [fetchedMarker]);
 
   // Функция для выбора изображения из галереи
+  // const pickImage = async () => {
+  //   let result = await ImagePicker.launchImageLibraryAsync({
+  //     mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  //     allowsEditing: true,
+  //     aspect: [4, 3],
+  //     quality: 1,
+  //   });
+
+  //   if (!result.canceled) {
+  //     const newImages = [...images, result.assets[0].uri];
+  //     console.log('Добавлено новое изображение:', result.assets[0].uri);
+  //     setImages(newImages);
+
+  //     const updatedMarkers = markers.map((m) =>
+  //       m.id === fetchedMarker.id ? { ...m, images: newImages } : m
+  //     );
+  //     setMarkers(updatedMarkers);
+  //   }
+  // };
+
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -46,14 +60,12 @@ const MarkerDetailScreen: React.FC = () => {
     });
 
     if (!result.canceled) {
-      const newImages = [...images, result.assets[0].uri];
-      console.log('Добавлено новое изображение:', result.assets[0].uri);
-      setImages(newImages);
-
-      const updatedMarkers = markers.map((m) =>
-        m.id === marker.id ? { ...m, images: newImages } : m
-      );
-      setMarkers(updatedMarkers);
+      const newImageUri = result.assets[0].uri;
+      // await addImage(fetchedMarker.id, newImageUri);
+      console.log(newImageUri)
+      const newImageId = await addImage(fetchedMarker.id, newImageUri);
+      console.log(newImageId)
+      setImages([...images, { id: newImageId, uri: newImageUri, markerId: fetchedMarker.id }]);
     }
   };
 
@@ -68,13 +80,17 @@ const MarkerDetailScreen: React.FC = () => {
         },
         {
           text: 'Удалить',
-          onPress: () => {
-            if (markers.length === 0) {
-              Alert.alert('Ошибка', 'Нет маркеров для удаления.');
-              return;
-            }
-            const updatedMarkers = markers.filter((m) => m.id !== marker.id);
-            setMarkers(updatedMarkers);
+          // onPress: () => {
+          //   if (markers.length === 0) {
+          //     Alert.alert('Ошибка', 'Нет маркеров для удаления.');
+          //     return;
+          //   }
+          //   const updatedMarkers = markers.filter((m) => m.id !== fetchedMarker.id);
+          //   setMarkers(updatedMarkers);
+          //   router.back();
+          // },
+          onPress: async () => {
+            await deleteMarker(fetchedMarker.id); // Удаляем маркер из базы данных
             router.back();
           },
         },
@@ -83,8 +99,10 @@ const MarkerDetailScreen: React.FC = () => {
     );
   };
 
-  const handleDeleteImage = (imageUri: string) => {
-    setSelectedImage(imageUri);
+  // const handleDeleteImage = (imageUri: string) => {
+  //   setSelectedImage(imageUri);
+  const handleDeleteImage = (imageId: number) => {
+    setSelectedImage(imageId);
     Alert.alert(
       'Удалить фото',
       'Вы уверены, что хотите удалить это фото?',
@@ -96,19 +114,25 @@ const MarkerDetailScreen: React.FC = () => {
         },
         {
           text: 'Удалить',
-          onPress: () => {
-            if (markers.length === 0) {
-              Alert.alert('Ошибка', 'Нет фото для удаления.');
-              return;
-            }
-            const newImages = images.filter((image) => image !== imageUri);
+          // onPress: () => {
+          //   if (markers.length === 0) {
+          //     Alert.alert('Ошибка', 'Нет фото для удаления.');
+          //     return;
+          //   }
+          //   const newImages = images.filter((image) => image !== imageUri);
+          //   setImages(newImages);
+          //   setSelectedImage(null);
+
+          //   const updatedMarkers = markers.map((m) =>
+          //     m.id === fetchedMarker.id ? { ...m, images: newImages } : m
+          //   );
+          //   setMarkers(updatedMarkers);
+          // },
+          onPress: async () => {
+            await deleteImage(imageId); // Удаляем изображение из базы данных
+            const newImages = images.filter((img) => img.id !== imageId); // Удаляем изображение из состояния
             setImages(newImages);
             setSelectedImage(null);
-
-            const updatedMarkers = markers.map((m) =>
-              m.id === marker.id ? { ...m, images: newImages } : m
-            );
-            setMarkers(updatedMarkers);
           },
         },
       ],
@@ -120,12 +144,12 @@ const MarkerDetailScreen: React.FC = () => {
     <View style={styles.container}>
       <Text style={styles.p}>
         Координаты:{"\n"}
-        {marker.coordinate.latitude}, {marker.coordinate.longitude}
+        {fetchedMarker.latitude}, {fetchedMarker.longitude}
       </Text>
       <Text style={styles.p}>
         {images.length === 0 ? 'Пока нет фото' : 'Фотографии на этом маркере'}
       </Text>
-      <ScrollView>
+      {/* <ScrollView>
         {images.map((image, index) => (
           <TouchableOpacity
             key={index}
@@ -139,6 +163,26 @@ const MarkerDetailScreen: React.FC = () => {
             <Button
               title="Удалить"
               onPress={() => handleDeleteImage(image)}
+              color="red"
+              style={styles.deleteButton}
+            />
+          </TouchableOpacity>
+        ))}
+      </ScrollView> */}
+      <ScrollView>
+        {images.map((image) => (
+          <TouchableOpacity
+            key={image.id} // Используем id как ключ
+            style={[
+              styles.imageWrapper,
+              selectedImage === image.id && styles.selectedImageWrapper,
+            ]}
+            onPress={() => setSelectedImage(image.id)}
+          >
+            <Image source={{ uri: image.uri }} style={styles.image} />
+            <Button
+              title="Удалить"
+              onPress={() => handleDeleteImage(image.id)} // Передаем id изображения
               color="red"
               style={styles.deleteButton}
             />

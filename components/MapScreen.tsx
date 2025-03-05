@@ -1,11 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, Button } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import CustomMarker from './CustomMarker';
+import SettingsScreen from './SettingsScreen';
 import { MarkerType } from '../types';
 import { v4 as uuid } from 'uuid';
 import { useMarkers } from '../components/MarkersContext';
+import { useDatabase } from '../contexts/DatabaseContext';
 
 const generateId = () => {
   return Math.random().toString(36).substring(2, 15);
@@ -14,36 +16,50 @@ const generateId = () => {
 
 const MapScreen: React.FC = () => {
   const router = useRouter();
-  const { markers, setMarkers } = useMarkers();
+  // const { markers, setMarkers } = useMarkers();
+  const { addMarker, getMarkers } = useDatabase();
+  const [markers, setMarkers] = useState<MarkerType[]>([]);
   const [inputLatitude, setInputLatitude] = useState('');
   const [inputLongitude, setInputLongitude] = useState('');
   const mapRef = useRef<MapView>(null);
 
-  const handleMapPress = (event: any) => {
-    const newMarker: MarkerType = {
-      id: generateId(),
-      coordinate: event.nativeEvent.coordinate,
-      images: [],
-    };
-    console.log('Новый маркер создан:', newMarker);
-    setMarkers([...markers, newMarker]);
+  // const handleMapPress = (event: any) => {
+  //   const newMarker: MarkerType = {
+  //     id: generateId(),
+  //     coordinate: event.nativeEvent.coordinate,
+  //     images: [],
+  //   };
+  //   console.log('Новый маркер создан:', newMarker);
+  //   setMarkers([...markers, newMarker]);
+  // };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadMarkers = async () => {
+        const data = await getMarkers();
+        setMarkers(data);
+      };
+      loadMarkers();
+    }, [])
+  );
+  
+
+  // const handleMarkerPress = (marker: MarkerType) => {
+  //   console.log('Нажат маркер:', marker);
+  //   router.push(`/marker/${marker.id}`);
+  //   return true;
+  // };
+
+  const handleMapPress = async (event: any) => {
+    const { latitude, longitude } = event.nativeEvent.coordinate;
+    const markerId = await addMarker(latitude, longitude); // Добавляем маркер в базу данных
+    setMarkers([...markers, { id: markerId, latitude, longitude, images: [] }]);
   };
 
   const handleMarkerPress = (marker: MarkerType) => {
     console.log('Нажат маркер:', marker);
     router.push(`/marker/${marker.id}`);
-    return true;
   };
-
-  // const handleDeleteMarker = (markerId: string) => {
-  //   const updatedMarkers = markers.filter((marker) => marker.id !== markerId);
-  //   setMarkers(updatedMarkers);
-  //   if (updatedMarkers.length === 0) {
-  //     navigation.navigate('MapScreen');
-  //   } else {
-  //     navigation.goBack();
-  //   }
-  // };
 
   const moveToCoordinates = () => {
     const lat = parseFloat(inputLatitude);
@@ -84,7 +100,8 @@ const MapScreen: React.FC = () => {
           style={styles.textInput}
         />
         <Button title="Отправиться" onPress={moveToCoordinates} />
-      </View>
+        
+      </View><SettingsScreen />
       <MapView
         ref={mapRef}
         style={styles.map}
@@ -94,16 +111,17 @@ const MapScreen: React.FC = () => {
           latitudeDelta: 0.005,
           longitudeDelta: 0.02,
         }}
-        onPress={handleMapPress}
+        onLongPress={handleMapPress}
       >
-        {markers.length > 0 &&
+        {
           markers.map((marker) => (
             <Marker
               key={marker.id}
-              coordinate={marker.coordinate}
+              // coordinate={marker.coordinate}
+              coordinate={{latitude: marker.latitude, longitude: marker.longitude}}
               onPress={() => handleMarkerPress(marker)}
             >
-              <CustomMarker photoCount={marker.images.length} />
+              <CustomMarker photoCount={marker.images ? marker.images.length : 0} />
             </Marker>
           ))}
       </MapView>

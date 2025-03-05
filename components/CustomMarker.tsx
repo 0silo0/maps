@@ -22,6 +22,8 @@ const CustomMarker: React.FC<Props> = ({ photoCount }) => {
 const styles = StyleSheet.create({
   markerContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
   photoCountContainer: {
     position: 'absolute',
@@ -32,6 +34,9 @@ const styles = StyleSheet.create({
     padding: 3,
     borderWidth: 1,
     borderColor: 'gray',
+    minWidth: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   photoCountText: {
     fontSize: 12,
