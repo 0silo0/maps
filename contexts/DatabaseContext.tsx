@@ -77,11 +77,11 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const addImage = async (markerId: number, uri: string): Promise<number> => {
     setIsLoading(true);
     try {
-      await db.runAsync(
+      const result = await db.runAsync(
         'INSERT INTO marker_images (marker_id, uri) VALUES (?, ?);',
         [markerId, uri]
       );
-      return markerId;
+      return result.lastInsertRowId as number;
     } catch (err) {
       setError(err as Error);
       throw err;
