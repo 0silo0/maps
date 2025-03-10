@@ -4,7 +4,7 @@ import { DatabaseProvider } from '../contexts/DatabaseContext';
 
 export default function RootLayout() {
   return (
-    <DatabaseProvider>
+    <MarkersProvider>
         <Stack>
         <Stack.Screen
             name="index"
@@ -19,6 +19,6 @@ export default function RootLayout() {
             }}
         />
         </Stack>
-    </ DatabaseProvider>
+    </ MarkersProvider>
   );
 }

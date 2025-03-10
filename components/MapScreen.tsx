@@ -5,7 +5,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import CustomMarker from './CustomMarker';
 import SettingsScreen from './SettingsScreen';
 import { MarkerType } from '../types';
-import { v4 as uuid } from 'uuid';
 import { useMarkers } from '../components/MarkersContext';
 import { useDatabase } from '../contexts/DatabaseContext';
 
@@ -16,50 +15,50 @@ const generateId = () => {
 
 const MapScreen: React.FC = () => {
   const router = useRouter();
-  // const { markers, setMarkers } = useMarkers();
-  const { addMarker, getMarkers } = useDatabase();
-  const [markers, setMarkers] = useState<MarkerType[]>([]);
+  const { markers, setMarkers } = useMarkers();
+  // const { addMarker, getMarkers } = useDatabase();
+  // const [markers, setMarkers] = useState<MarkerType[]>([]);
   const [inputLatitude, setInputLatitude] = useState('');
   const [inputLongitude, setInputLongitude] = useState('');
   const mapRef = useRef<MapView>(null);
 
-  // const handleMapPress = (event: any) => {
-  //   const newMarker: MarkerType = {
-  //     id: generateId(),
-  //     coordinate: event.nativeEvent.coordinate,
-  //     images: [],
-  //   };
-  //   console.log('Новый маркер создан:', newMarker);
-  //   setMarkers([...markers, newMarker]);
-  // };
-
-  useFocusEffect(
-    React.useCallback(() => {
-      const loadMarkers = async () => {
-        const data = await getMarkers();
-        setMarkers(data);
-      };
-      loadMarkers();
-    }, [])
-  );
-  
-
-  // const handleMarkerPress = (marker: MarkerType) => {
-  //   console.log('Нажат маркер:', marker);
-  //   router.push(`/marker/${marker.id}`);
-  //   return true;
-  // };
-
-  const handleMapPress = async (event: any) => {
-    const { latitude, longitude } = event.nativeEvent.coordinate;
-    const markerId = await addMarker(latitude, longitude); // Добавляем маркер в базу данных
-    setMarkers([...markers, { id: markerId, latitude, longitude, images: [] }]);
+  const handleMapPress = (event: any) => {
+    const newMarker: MarkerType = {
+      id: generateId(),
+      coordinate: event.nativeEvent.coordinate,
+      images: [],
+    };
+    console.log('Новый маркер создан:', newMarker);
+    setMarkers([...markers, newMarker]);
   };
+
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     const loadMarkers = async () => {
+  //       const data = await getMarkers();
+  //       setMarkers(data);
+  //     };
+  //     loadMarkers();
+  //   }, [])
+  // );
+  
 
   const handleMarkerPress = (marker: MarkerType) => {
     console.log('Нажат маркер:', marker);
     router.push(`/marker/${marker.id}`);
+    return true;
   };
+
+  // const handleMapPress = async (event: any) => {
+  //   const { latitude, longitude } = event.nativeEvent.coordinate;
+  //   const markerId = await addMarker(latitude, longitude); // Добавляем маркер в базу данных
+  //   setMarkers([...markers, { id: markerId, latitude, longitude, images: [] }]);
+  // };
+
+  // const handleMarkerPress = (marker: MarkerType) => {
+  //   console.log('Нажат маркер:', marker);
+  //   router.push(`/marker/${marker.id}`);
+  // };
 
   const moveToCoordinates = () => {
     const lat = parseFloat(inputLatitude);
@@ -117,8 +116,8 @@ const MapScreen: React.FC = () => {
           markers.map((marker) => (
             <Marker
               key={marker.id}
-              // coordinate={marker.coordinate}
-              coordinate={{latitude: marker.latitude, longitude: marker.longitude}}
+              coordinate={marker.coordinate}
+              // coordinate={{latitude: marker.latitude, longitude: marker.longitude}}
               onPress={() => handleMarkerPress(marker)}
             >
               <CustomMarker photoCount={marker.images ? marker.images.length : 0} />

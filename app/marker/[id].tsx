@@ -5,26 +5,26 @@ import { useLocalSearchParams } from 'expo-router';
 import { MarkerType } from '../../types'; 
 import MarkerDetailScreen from '../../components/MarkerDetailScreen';
 import { useDatabase } from '../../contexts/DatabaseContext';
+import { useMarkers } from '../../components/MarkersContext';
 
 const MarkerPage: React.FC = () => {
-  const { id } = useLocalSearchParams(); // Получаем параметр маршрута (id)
+  const { id } = useLocalSearchParams();
   const markerId = Array.isArray(id) ? id[0] : id;
-  // const { markers } = useMarkers();
-  const { getMarkerById } = useDatabase();
-  // const fetchedMarker = markers.find((m) => m.id === markerId);
-  const [fetchedMarker, setFetchedMarker] = useState<MarkerType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { markers } = useMarkers();
+  // const { getMarkerById } = useDatabase();
+  const fetchedMarker = markers.find((m) => m.id === markerId);
+  // const [fetchedMarker, setFetchedMarker] = useState<MarkerType | null>(null);
 
-  useEffect(() => {
-    const loadMarker = async () => {
-      if (markerId) {
-        const marker = await getMarkerById(Number(markerId)); // Получаем маркер из базы данных
-        setFetchedMarker(marker);
-        setIsLoading(false);
-      }
-    };
-    loadMarker();
-  }, [markerId]);
+  // useEffect(() => {
+  //   const loadMarker = async () => {
+  //     if (markerId) {
+  //       const marker = await getMarkerById(Number(markerId));
+  //       setFetchedMarker(marker);
+  //       setIsLoading(false);
+  //     }
+  //   };
+  //   loadMarker();
+  // }, [markerId]);
 
   if (!fetchedMarker) {
     return <Text>Маркер не найден</Text>;
