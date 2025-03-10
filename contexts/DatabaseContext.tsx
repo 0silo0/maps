@@ -37,7 +37,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         'INSERT INTO markers (latitude, longitude) VALUES (?, ?);',
         [latitude, longitude]
       );
-      console.log('fsdfsdf', result)
       return result.lastInsertRowId as number;
     } catch (err) {
         console.log(err)
@@ -51,8 +50,13 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const deleteMarker = async (id: number): Promise<void> => {
     setIsLoading(true);
     try {
+      const check = await db.getAllAsync<ImageType>(
+        'SELECT id FROM marker_images WHERE marker_id = ?;',
+        [id]
+      );
+      await db.runAsync('DELETE FROM marker_images WHERE marker_id = ?;', [id]);
       await db.runAsync('DELETE FROM markers WHERE id = ?;', [id]);
-      console.log('delmark - ', id)
+      console.log('Маркер и связанные изображения удалены - ', id, check)
     } catch (err) {
       setError(err as Error);
       throw err;
@@ -127,7 +131,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         [id]
       );
       
-      console.log('ewqwqewqew - ', results);
       return results.length > 0 ? results[0] : null;
     } catch (err) {
       setError(err as Error);
